@@ -1,148 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kemium AI</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0d0d0d;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kemium AI - Free Chatbot</title>
+<style>
+  /* Reset & base */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: #1e1e2f;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #e0e0e0;
+  }
 
-    header {
-      background: #1a1a1a;
-      padding: 1rem 2rem;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-    }
+  #app {
+    background: #2a2a3c;
+    width: 100%;
+    max-width: 600px;
+    height: 90vh;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 20px #00fff7aa;
+  }
 
-    header h1 {
-      margin: 0;
-      color: #00ffd5;
-      font-size: 2rem;
-    }
+  header {
+    padding: 18px;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 1px solid #444559;
+    color: #00fff7;
+    letter-spacing: 2px;
+  }
 
-    #chat-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 800px;
-      padding: 1rem;
-      box-sizing: border-box;
-    }
+  #chat {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
 
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      border: 1px solid #2b2b2b;
-      border-radius: 10px;
-      background: #1a1a1a;
-      margin-bottom: 1rem;
-    }
+  .message {
+    max-width: 75%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
 
-    .message {
-      margin: 0.5rem 0;
-      line-height: 1.4;
-    }
+  .user {
+    align-self: flex-end;
+    background: #00c6a7;
+    color: #111;
+    border-bottom-right-radius: 0;
+    font-weight: 600;
+  }
 
-    .user {
-      color: #00ffd5;
-    }
+  .bot {
+    align-self: flex-start;
+    background: #3f3f56;
+    color: #cdd6f4;
+    border-bottom-left-radius: 0;
+  }
 
-    .bot {
-      color: #ffffff;
-    }
+  #input-area {
+    display: flex;
+    border-top: 1px solid #444559;
+    background: #222232;
+  }
 
-    #input-container {
-      display: flex;
-      gap: 0.5rem;
-    }
+  #input {
+    flex: 1;
+    padding: 14px 18px;
+    font-size: 1rem;
+    background: #121224;
+    border: none;
+    color: #e0e0e0;
+    outline: none;
+    border-radius: 0 0 0 12px;
+  }
 
-    #user-input {
-      flex: 1;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border-radius: 5px;
-      border: none;
-      outline: none;
-    }
+  #input::placeholder {
+    color: #666;
+  }
 
-    button {
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 5px;
-      background-color: #00ffd5;
-      color: #000;
-      cursor: pointer;
-    }
+  button {
+    background: #00fff7;
+    border: none;
+    color: #000;
+    font-weight: 700;
+    padding: 0 24px;
+    cursor: pointer;
+    border-radius: 0 0 12px 0;
+    transition: background 0.3s ease;
+  }
 
-    button:hover {
-      background-color: #00c9aa;
-    }
-  </style>
+  button:disabled {
+    background: #33f9d7aa;
+    cursor: not-allowed;
+  }
+
+  button:hover:not(:disabled) {
+    background: #00d8c2;
+  }
+</style>
 </head>
 <body>
-  <header>
-    <h1>Kemium AI</h1>
-  </header>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <div id="input-container">
-      <input type="text" id="user-input" placeholder="Ask me anything..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
+<div id="app">
+  <header>Kemium AI</header>
+  <div id="chat"></div>
+  <form id="input-area">
+    <input id="input" type="text" placeholder="Ask Kemium anything..." autocomplete="off" />
+    <button type="submit" id="send-btn">Send</button>
+  </form>
+</div>
 
-  <script>
-    const messagesEl = document.getElementById('messages');
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const form = document.getElementById('input-area');
+  const sendBtn = document.getElementById('send-btn');
 
-    async function sendMessage() {
-      const inputEl = document.getElementById('user-input');
-      const userMessage = inputEl.value.trim();
-      if (!userMessage) return;
+  // Simple rule-based responses
+  const responses = {
+    "hello": "Hello! I'm Kemium AI, your free chatbot. How can I assist you today?",
+    "hi": "Hi there! What can I help you with?",
+    "how are you": "I'm just code, but I'm running perfectly! Thanks for asking.",
+    "what is your name": "I am Kemium AI — your friendly assistant.",
+    "who created you": "I was created by an awesome developer like you!",
+    "what is kemium": "Kemium is your AI assistant for free and easy chat on the web!",
+    "what is the capital of france": "The capital of France is Paris.",
+    "thank you": "You're welcome! Feel free to ask me anything else.",
+    "bye": "Goodbye! Hope to chat with you soon.",
+    "default": "Sorry, I don't know the answer to that yet, but I'm learning every day!"
+  };
 
-      addMessage('user', userMessage);
-      inputEl.value = '';
+  function addMessage(text, sender) {
+    const div = document.createElement('div');
+    div.className = 'message ' + sender;
+    div.textContent = (sender === 'user' ? "You: " : "Kemium AI: ") + text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
 
-      addMessage('bot', 'Thinking...');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    let question = input.value.trim();
+    if (!question) return;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer YOUR_OPENAI_API_KEY'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [{ role: 'user', content: userMessage }],
-          max_tokens: 1000
-        })
-      });
+    addMessage(question, 'user');
+    input.value = '';
 
-      const data = await response.json();
-      messagesEl.lastChild.remove(); // remove 'Thinking...'
-      addMessage('bot', data.choices[0].message.content);
+    // Lowercase for matching
+    let lowerQ = question.toLowerCase();
+
+    // Find response
+    let answer = responses["default"];
+    for (const key in responses) {
+      if (lowerQ.includes(key)) {
+        answer = responses[key];
+        break;
+      }
     }
 
-    function addMessage(sender, text) {
-      const div = document.createElement('div');
-      div.className = 'message ' + sender;
-      div.textContent = (sender === 'user' ? 'You: ' : 'Kemium AI: ') + text;
-      messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-  </script>
+    // Simulate typing delay
+    sendBtn.disabled = true;
+    setTimeout(() => {
+      addMessage(answer, 'bot');
+      sendBtn.disabled = false;
+      input.focus();
+    }, 800);
+  });
+
+  input.focus();
+</script>
 </body>
 </html>
+
