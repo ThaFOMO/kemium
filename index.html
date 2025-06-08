@@ -3,186 +3,228 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Kemium AI - Free Chatbot</title>
+<title>Simple Football Game</title>
 <style>
-  /* Reset & base */
-  * {
-    box-sizing: border-box;
-  }
   body {
     margin: 0;
-    background: #1e1e2f;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #2e7d32;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    color: #e0e0e0;
+    user-select: none;
   }
-
-  #app {
-    background: #2a2a3c;
-    width: 100%;
-    max-width: 600px;
-    height: 90vh;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 0 20px #00fff7aa;
-  }
-
-  header {
-    padding: 18px;
-    font-size: 1.8rem;
-    font-weight: 700;
-    text-align: center;
-    border-bottom: 1px solid #444559;
-    color: #00fff7;
-    letter-spacing: 2px;
-  }
-
-  #chat {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .message {
-    max-width: 75%;
-    padding: 12px 16px;
-    border-radius: 14px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-  }
-
-  .user {
-    align-self: flex-end;
-    background: #00c6a7;
-    color: #111;
-    border-bottom-right-radius: 0;
-    font-weight: 600;
-  }
-
-  .bot {
-    align-self: flex-start;
-    background: #3f3f56;
-    color: #cdd6f4;
-    border-bottom-left-radius: 0;
-  }
-
-  #input-area {
-    display: flex;
-    border-top: 1px solid #444559;
-    background: #222232;
-  }
-
-  #input {
-    flex: 1;
-    padding: 14px 18px;
-    font-size: 1rem;
-    background: #121224;
-    border: none;
-    color: #e0e0e0;
-    outline: none;
-    border-radius: 0 0 0 12px;
-  }
-
-  #input::placeholder {
-    color: #666;
-  }
-
-  button {
-    background: #00fff7;
-    border: none;
-    color: #000;
-    font-weight: 700;
-    padding: 0 24px;
-    cursor: pointer;
-    border-radius: 0 0 12px 0;
-    transition: background 0.3s ease;
-  }
-
-  button:disabled {
-    background: #33f9d7aa;
-    cursor: not-allowed;
-  }
-
-  button:hover:not(:disabled) {
-    background: #00d8c2;
+  canvas {
+    background: #4caf50;
+    border: 4px solid #fff;
+    border-radius: 10px;
+    display: block;
   }
 </style>
 </head>
 <body>
-<div id="app">
-  <header>Kemium AI</header>
-  <div id="chat"></div>
-  <form id="input-area">
-    <input id="input" type="text" placeholder="Ask Kemium anything..." autocomplete="off" />
-    <button type="submit" id="send-btn">Send</button>
-  </form>
-</div>
+<canvas id="game" width="600" height="400"></canvas>
 
 <script>
-  const chat = document.getElementById('chat');
-  const input = document.getElementById('input');
-  const form = document.getElementById('input-area');
-  const sendBtn = document.getElementById('send-btn');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
 
-  // Simple rule-based responses
-  const responses = {
-    "hello": "Hello! I'm Kemium AI, your free chatbot. How can I assist you today?",
-    "hi": "Hi there! What can I help you with?",
-    "how are you": "I'm just code, but I'm running perfectly! Thanks for asking.",
-    "what is your name": "I am Kemium AI — your friendly assistant.",
-    "who created you": "I was created by an awesome developer like you!",
-    "what is kemium": "Kemium is your AI assistant for free and easy chat on the web!",
-    "what is the capital of france": "The capital of France is Paris.",
-    "thank you": "You're welcome! Feel free to ask me anything else.",
-    "bye": "Goodbye! Hope to chat with you soon.",
-    "default": "Sorry, I don't know the answer to that yet, but I'm learning every day!"
+  // Field and goal settings
+  const fieldWidth = canvas.width;
+  const fieldHeight = canvas.height;
+  const goalWidth = 120;
+  const goalHeight = 80;
+
+  // Player settings
+  const player = {
+    x: 100,
+    y: fieldHeight / 2,
+    radius: 15,
+    color: '#2196f3',
+    speed: 4,
+    dx: 0,
+    dy: 0,
   };
 
-  function addMessage(text, sender) {
-    const div = document.createElement('div');
-    div.className = 'message ' + sender;
-    div.textContent = (sender === 'user' ? "You: " : "Kemium AI: ") + text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
+  // Ball settings
+  const ball = {
+    x: fieldWidth / 2,
+    y: fieldHeight / 2,
+    radius: 10,
+    color: '#fff',
+    dx: 0,
+    dy: 0,
+    maxSpeed: 5,
+  };
 
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    let question = input.value.trim();
-    if (!question) return;
+  // Score
+  let score = 0;
 
-    addMessage(question, 'user');
-    input.value = '';
+  // Keyboard controls
+  const keys = {
+    ArrowUp: false,
+    ArrowDown: false,
+    ArrowLeft: false,
+    ArrowRight: false,
+  };
 
-    // Lowercase for matching
-    let lowerQ = question.toLowerCase();
-
-    // Find response
-    let answer = responses["default"];
-    for (const key in responses) {
-      if (lowerQ.includes(key)) {
-        answer = responses[key];
-        break;
-      }
+  // Listen for key presses
+  window.addEventListener('keydown', (e) => {
+    if (keys.hasOwnProperty(e.key)) {
+      keys[e.key] = true;
     }
-
-    // Simulate typing delay
-    sendBtn.disabled = true;
-    setTimeout(() => {
-      addMessage(answer, 'bot');
-      sendBtn.disabled = false;
-      input.focus();
-    }, 800);
+  });
+  window.addEventListener('keyup', (e) => {
+    if (keys.hasOwnProperty(e.key)) {
+      keys[e.key] = false;
+    }
   });
 
-  input.focus();
+  function resetBall() {
+    ball.x = fieldWidth / 2;
+    ball.y = fieldHeight / 2;
+    ball.dx = 0;
+    ball.dy = 0;
+  }
+
+  function drawField() {
+    // Grass background
+    ctx.fillStyle = '#4caf50';
+    ctx.fillRect(0, 0, fieldWidth, fieldHeight);
+
+    // Center line
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(fieldWidth / 2, 0);
+    ctx.lineTo(fieldWidth / 2, fieldHeight);
+    ctx.stroke();
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(fieldWidth / 2, fieldHeight / 2, 60, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Goals - left and right
+    ctx.fillStyle = '#ddd';
+    // Left goal
+    ctx.fillRect(0, (fieldHeight - goalHeight) / 2, 10, goalHeight);
+    // Right goal
+    ctx.fillRect(fieldWidth - 10, (fieldHeight - goalHeight) / 2, 10, goalHeight);
+  }
+
+  function drawPlayer() {
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBall() {
+    ctx.fillStyle = ball.color;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawScore() {
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px Arial';
+    ctx.fillText(`Score: ${score}`, 20, 30);
+  }
+
+  function movePlayer() {
+    if (keys.ArrowUp && player.y - player.radius > 0) {
+      player.y -= player.speed;
+    }
+    if (keys.ArrowDown && player.y + player.radius < fieldHeight) {
+      player.y += player.speed;
+    }
+    if (keys.ArrowLeft && player.x - player.radius > 0) {
+      player.x -= player.speed;
+    }
+    if (keys.ArrowRight && player.x + player.radius < fieldWidth) {
+      player.x += player.speed;
+    }
+  }
+
+  function moveBall() {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    // Friction slows ball gradually
+    ball.dx *= 0.95;
+    ball.dy *= 0.95;
+
+    // Stop ball if very slow
+    if (Math.abs(ball.dx) < 0.1) ball.dx = 0;
+    if (Math.abs(ball.dy) < 0.1) ball.dy = 0;
+
+    // Keep ball inside field vertically
+    if (ball.y - ball.radius < 0) {
+      ball.y = ball.radius;
+      ball.dy = -ball.dy;
+    }
+    if (ball.y + ball.radius > fieldHeight) {
+      ball.y = fieldHeight - ball.radius;
+      ball.dy = -ball.dy;
+    }
+  }
+
+  function checkCollision() {
+    // Calculate distance between player and ball
+    const distX = ball.x - player.x;
+    const distY = ball.y - player.y;
+    const distance = Math.sqrt(distX * distX + distY * distY);
+
+    if (distance < player.radius + ball.radius) {
+      // Simple collision response: push ball away from player
+      const angle = Math.atan2(distY, distX);
+      const force = 5;
+      ball.dx = Math.cos(angle) * force;
+      ball.dy = Math.sin(angle) * force;
+    }
+  }
+
+  function checkGoal() {
+    // Left goal (player tries to score here)
+    if (
+      ball.x - ball.radius < 10 &&
+      ball.y > (fieldHeight - goalHeight) / 2 &&
+      ball.y < (fieldHeight + goalHeight) / 2
+    ) {
+      score++;
+      resetBall();
+    }
+
+    // Right goal (ball bounces off)
+    if (
+      ball.x + ball.radius > fieldWidth - 10 &&
+      ball.y > (fieldHeight - goalHeight) / 2 &&
+      ball.y < (fieldHeight + goalHeight) / 2
+    ) {
+      // Bounce ball back
+      ball.x = fieldWidth - 10 - ball.radius;
+      ball.dx = -ball.dx;
+    }
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, fieldWidth, fieldHeight);
+
+    drawField();
+    drawScore();
+    movePlayer();
+    moveBall();
+    checkCollision();
+    checkGoal();
+    drawPlayer();
+    drawBall();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  gameLoop();
 </script>
 </body>
 </html>
