@@ -1,38 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Custom Subdomain Creator</title>
-  <style>
-    body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 50px; }
-    input, button { padding: 10px; font-size: 16px; margin: 10px; border-radius: 8px; border: none; }
-    input { width: 80%; max-width: 400px; }
-    button { background-color: #00cc99; color: white; cursor: pointer; }
-    .link-output { margin-top: 20px; font-size: 18px; color: #0f0; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fake Twitch/Kick Live Stream</title>
+<style>
+  body {
+    margin: 0; background: #0e0e10; color: #ddd; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  header {
+    background: #18181b; padding: 10px 20px; font-weight: bold; font-size: 1.2rem; display: flex; justify-content: space-between;
+    align-items: center; color: #fff;
+  }
+  #streamer-name { font-size: 1.4rem; }
+  #main {
+    flex: 1; display: flex; overflow: hidden;
+  }
+  #video-section {
+    flex: 2.5; background: #000; position: relative; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+  }
+  video, #cam-preview {
+    max-width: 100%; max-height: 70vh; border-radius: 6px; background: #000;
+  }
+  #cam-source-input {
+    margin-top: 10px;
+    width: 95%;
+    padding: 6px 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+  }
+  #alerts {
+    position: absolute; top: 10px; left: 10px; width: 100%; pointer-events: none;
+    z-index: 10;
+  }
+  .alert {
+    background: rgba(0,0,0,0.75);
+    color: #fff; padding: 12px 20px; border-radius: 8px;
+    font-size: 1.2rem; margin-bottom: 10px;
+    width: 320px;
+    box-shadow: 0 0 15px #66ccff;
+    animation: slideIn 0.5s ease forwards;
+  }
+  @keyframes slideIn {
+    from {opacity: 0; transform: translateX(-100%);}
+    to {opacity: 1; transform: translateX(0);}
+  }
+
+  #sidebar {
+    flex: 1.5; background: #1f1f23; display: flex; flex-direction: column;
+  }
+  #stats {
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-around;
+    font-size: 1.1rem;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-number {
+    font-weight: 700; font-size: 2rem; color: #66ccff;
+  }
+  #chat {
+    flex: 1; padding: 15px 20px; overflow-y: auto; font-size: 0.9rem; background: #121214;
+    display: flex; flex-direction: column-reverse;
+  }
+  .chat-message {
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .chat-username {
+    font-weight: 700; color: #66ccff; margin-right: 6px;
+  }
+  .chat-text {
+    color: #ddd;
+  }
+  #cam-controls {
+    background: #18181b; padding: 10px 20px; border-top: 1px solid #333;
+    display: flex; justify-content: center; gap: 10px;
+  }
+  #start-cam-btn {
+    background: #66ccff; color: #000; border: none; border-radius: 6px;
+    padding: 8px 16px; cursor: pointer; font-weight: 700; font-size: 1rem;
+    transition: background-color 0.3s ease;
+  }
+  #start-cam-btn:hover {
+    background: #5599dd;
+  }
+</style>
 </head>
 <body>
-  <h1>Create Your Free Subdomain</h1>
-  <p>Example: yourname.custom.example.com</p>
-  <input id="subdomain" placeholder="Enter your name" />
-  <input id="redirect" placeholder="Redirect link (optional)" />
-  <button onclick="generateSubdomain()">Generate</button>
-  <div class="link-output" id="output"></div>
+<header>
+  <div id="streamer-name">StreamerName123</div>
+  <div>Fake Live Stream</div>
+</header>
+<div id="main">
+  <section id="video-section">
+    <video id="video-player" controls autoplay loop muted playsinline poster="https://i.imgur.com/0Z8xuUL.jpg" style="display:none"></video>
+    <video id="cam-preview" autoplay playsinline muted style="display:none; border: 2px solid #66ccff; border-radius: 8px;"></video>
+    <input id="cam-source-input" type="text" placeholder="Paste video URL here or leave empty for webcam" />
+    <div id="alerts"></div>
+  </section>
+  <aside id="sidebar">
+    <div id="stats">
+      <div class="stat">
+        <div class="stat-number" id="viewers-count">0</div>
+        <div>Viewers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="followers-count">0</div>
+        <div>Followers</div>
+      </div>
+    </div>
+    <div id="chat"></div>
+    <div id="cam-controls">
+      <button id="start-cam-btn">Start Webcam</button>
+    </div>
+  </aside>
+</div>
 
-  <script>
-    function generateSubdomain() {
-      const name = document.getElementById("subdomain").value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      const link = document.getElementById("redirect").value;
-      if (!name) return alert("Please enter a name");
+<script>
+  // Viewer and follower counts that update randomly
+  let viewers = 500;
+  let followers = 3000;
+  const viewersEl = document.getElementById('viewers-count');
+  const followersEl = document.getElementById('followers-count');
 
-      let subdomainURL = `https://${name}.custom.example.com`;
-      let html = `Your subdomain: <a href='${subdomainURL}' target='_blank'>${subdomainURL}</a>`;
+  function updateStats() {
+    viewers += (Math.random() < 0.6 ? 1 : -1) * Math.floor(Math.random()*5);
+    followers += Math.random() < 0.05 ? 1 : 0;
+    if (viewers < 100) viewers = 100;
+    if (followers < 1000) followers = 1000;
+    viewersEl.textContent = viewers.toLocaleString();
+    followersEl.textContent = followers.toLocaleString();
+  }
+  setInterval(updateStats, 3000);
+  updateStats();
 
-      if (link) html += `<br>Redirect to: <a href='${link}' target='_blank'>${link}</a>`;
+  // Fake chat messages auto typing
+  const chatEl = document.getElementById('chat');
+  const chatUsers = ['GamerX', 'NoScopePro', 'StreamQueen', 'EpicFail', 'L33tSniper', 'PixelPal', 'FunkyMonkey', 'AlphaWolf', 'Nova', 'Shadow'];
+  const chatMessages = [
+    "Nice shot!",
+    "Lol that was insane",
+    "Followed! Keep it up 🔥",
+    "This stream is lit!",
+    "When's the next game?",
+    "GG everyone",
+    "Bro this is so good",
+    "Any tips for beginners?",
+    "I love this community!",
+    "Who else is hyped?"
+  ];
+  function addChatMessage() {
+    const username = chatUsers[Math.floor(Math.random() * chatUsers.length)];
+    const message = chatMessages[Math.floor(Math.random() * chatMessages.length)];
+    const msgEl = document.createElement('div');
+    msgEl.classList.add('chat-message');
+    msgEl.innerHTML = `<span class="chat-username">${username}:</span> <span class="chat-text">${message}</span>`;
+    chatEl.prepend(msgEl);
+    // keep max 50 messages
+    if (chatEl.children.length > 50) chatEl.removeChild(chatEl.lastChild);
+  }
+  setInterval(addChatMessage, 2000);
 
-      document.getElementById("output").innerHTML = html;
+  // Alert system
+  const alertsEl = document.getElementById('alerts');
+
+  function createAlert(text) {
+    const alert = document.createElement('div');
+    alert.className = 'alert';
+    alert.textContent = text;
+    alertsEl.appendChild(alert);
+
+    // Text to Speech
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(utterance);
     }
-  </script>
+
+    setTimeout(() => {
+      alert.style.opacity = '0';
+      alert.style.transition = 'opacity 1s ease';
+      setTimeout(() => alertsEl.removeChild(alert), 1000);
+    }, 4000);
+  }
+
+  // Fake follow alert every 20-40 seconds
+  function randomFollow() {
+    const names = ['PixelPal', 'Shadow', 'EpicFail', 'Nova', 'L33tSniper', 'StreamQueen'];
+    const name = names[Math.floor(Math.random() * names.length)];
+    createAlert(`New follower: ${name}`);
+    followers++;
+    followersEl.textContent = followers.toLocaleString();
+  }
+  setInterval(randomFollow, 25000);
+
+  // Fake donation alert every 30-60 seconds
+  function randomDonation() {
+    const donors = ['GamerX', 'AlphaWolf', 'NoScopePro', 'L33tSniper'];
+    const amounts = [1, 5, 10, 20, 50];
+    const donor = donors[Math.floor(Math.random() * donors.length)];
+    const amount = amounts[Math.floor(Math.random() * amounts.length)];
+    createAlert(`${donor} donated $${amount}`);
+  }
+  setInterval(randomDonation, 40000);
+
+  // Cam source input logic
+  const videoPlayer = document.getElementById('video-player');
+  const camPreview = document.getElementById('cam-preview');
+  const camInput = document.getElementById('cam-source-input');
+  const startCamBtn = document.getElementById('start-cam-btn');
+
+  camInput.addEventListener('change', () => {
+    let url = camInput.value.trim();
+    if (url) {
+      // Stop webcam if active
+      if (camPreview.srcObject) {
+        let tracks = camPreview.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        camPreview.style.display = 'none';
+      }
+      videoPlayer.src = url;
+      videoPlayer.style.display = 'block';
+      camPreview.style.display = 'none';
+      videoPlayer.play();
+    } else {
+      videoPlayer.pause();
+      videoPlayer.style.display = 'none';
+      camPreview.style.display = 'none';
+    }
+  });
+
+  startCamBtn.addEventListener('click', async () => {
+    try {
+      let stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      camPreview.srcObject = stream;
+      camPreview.style.display = 'block';
+      videoPlayer.style.display = 'none';
+      camInput.value = '';
+    } catch (err) {
+      alert('Could not access webcam: ' + err.message);
+    }
+  });
+</script>
 </body>
 </html>
+
