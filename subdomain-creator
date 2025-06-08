@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Custom Subdomain Creator</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 50px; }
+    input, button { padding: 10px; font-size: 16px; margin: 10px; border-radius: 8px; border: none; }
+    input { width: 80%; max-width: 400px; }
+    button { background-color: #00cc99; color: white; cursor: pointer; }
+    .link-output { margin-top: 20px; font-size: 18px; color: #0f0; }
+  </style>
+</head>
+<body>
+  <h1>Create Your Free Subdomain</h1>
+  <p>Example: yourname.custom.example.com</p>
+  <input id="subdomain" placeholder="Enter your name" />
+  <input id="redirect" placeholder="Redirect link (optional)" />
+  <button onclick="generateSubdomain()">Generate</button>
+  <div class="link-output" id="output"></div>
+
+  <script>
+    function generateSubdomain() {
+      const name = document.getElementById("subdomain").value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const link = document.getElementById("redirect").value;
+      if (!name) return alert("Please enter a name");
+
+      let subdomainURL = `https://${name}.custom.example.com`;
+      let html = `Your subdomain: <a href='${subdomainURL}' target='_blank'>${subdomainURL}</a>`;
+
+      if (link) html += `<br>Redirect to: <a href='${link}' target='_blank'>${link}</a>`;
+
+      document.getElementById("output").innerHTML = html;
+    }
+  </script>
+</body>
+</html>
