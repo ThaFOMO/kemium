@@ -3,229 +3,207 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Simple Football Game</title>
+<title>Fun Fake ID Generator</title>
 <style>
   body {
-    margin: 0;
-    background: #2e7d32;
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
-    user-select: none;
+    padding: 20px;
   }
-  canvas {
+  h1 {
+    margin-bottom: 10px;
+  }
+  label, select, input {
+    margin: 5px 0;
+    display: block;
+    width: 300px;
+  }
+  input {
+    padding: 6px;
+    font-size: 16px;
+  }
+  select {
+    padding: 6px;
+    font-size: 16px;
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 18px;
     background: #4caf50;
-    border: 4px solid #fff;
-    border-radius: 10px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  #id-card {
+    margin-top: 30px;
+    background: #fff;
+    color: #000;
+    width: 350px;
+    height: 220px;
+    border-radius: 15px;
+    box-shadow: 0 0 10px #000;
+    position: relative;
+    font-weight: bold;
+  }
+  #id-canvas {
+    border-radius: 15px;
     display: block;
   }
 </style>
 </head>
 <body>
-<canvas id="game" width="600" height="400"></canvas>
+<h1>Fun Fake ID Generator</h1>
+
+<label for="celebrity">Choose Celebrity Picture:</label>
+<select id="celebrity">
+  <option value="trump">Donald Trump</option>
+  <option value="dukedennis">Duke Dennis</option>
+  <option value="kaicenat">Kai Cenat</option>
+  <option value="elon">Elon Musk</option>
+  <option value="beyonce">Beyoncé</option>
+</select>
+
+<label for="fullname">Full Name:</label>
+<input type="text" id="fullname" placeholder="Enter fake full name" value="John Doe" />
+
+<label for="age">Age:</label>
+<input type="number" id="age" min="10" max="99" value="25" />
+
+<label for="idnumber">ID Number:</label>
+<input type="text" id="idnumber" placeholder="Enter fake ID number" value="A123456789" />
+
+<button id="generateBtn">Generate Fake ID</button>
+
+<div id="id-card">
+  <canvas id="id-canvas" width="350" height="220"></canvas>
+</div>
 
 <script>
-  const canvas = document.getElementById('game');
+  // Celebrity images (public domain or CC0 or placeholders)
+  const celebImages = {
+    trump: "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    dukedennis: "https://i.imgur.com/RY5hO8A.jpg", // Duke Dennis fan image
+    kaicenat: "https://i.imgur.com/q7u5ikY.jpg",   // Kai Cenat fan image
+    elon: "https://upload.wikimedia.org/wikipedia/commons/e/ed/Elon_Musk_Royal_Society_%28crop1%29.jpg",
+    beyonce: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Beyonce_-_2013_02_16_-_047_cropped.jpg"
+  };
+
+  const canvas = document.getElementById('id-canvas');
   const ctx = canvas.getContext('2d');
 
-  // Field and goal settings
-  const fieldWidth = canvas.width;
-  const fieldHeight = canvas.height;
-  const goalWidth = 120;
-  const goalHeight = 80;
+  const generateBtn = document.getElementById('generateBtn');
 
-  // Player settings
-  const player = {
-    x: 100,
-    y: fieldHeight / 2,
-    radius: 15,
-    color: '#2196f3',
-    speed: 4,
-    dx: 0,
-    dy: 0,
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    for(let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = ctx.measureText(testLine);
+      let testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+      }
+      else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y);
+  }
+
+  generateBtn.onclick = () => {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw ID card background
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grad.addColorStop(0, '#005f73');
+    grad.addColorStop(1, '#0a9396');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw some decorative stripes
+    ctx.fillStyle = '#94d2bd';
+    ctx.fillRect(10, 10, canvas.width - 20, 20);
+    ctx.fillRect(10, canvas.height - 30, canvas.width - 20, 20);
+
+    // Draw header text
+    ctx.fillStyle = '#fffffa';
+    ctx.font = '22px Arial Black';
+    ctx.fillText('FUN FAKE ID CARD', 20, 35);
+
+    // Load selected celebrity image
+    const celebKey = document.getElementById('celebrity').value;
+    const imgSrc = celebImages[celebKey];
+
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // To avoid CORS issues for saving image
+    img.src = imgSrc;
+    img.onload = () => {
+      // Draw the celeb image on left side
+      const imgX = 20;
+      const imgY = 50;
+      const imgWidth = 100;
+      const imgHeight = 120;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(imgX, imgY);
+      ctx.lineTo(imgX + imgWidth, imgY);
+      ctx.lineTo(imgX + imgWidth, imgY + imgHeight);
+      ctx.lineTo(imgX, imgY + imgHeight);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+      ctx.restore();
+
+      // Draw border around image
+      ctx.strokeStyle = '#fffffa';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(imgX, imgY, imgWidth, imgHeight);
+
+      // Draw fake info text
+      ctx.fillStyle = '#fffffa';
+      ctx.font = 'bold 18px Arial';
+      const fullname = document.getElementById('fullname').value.trim() || 'John Doe';
+      const age = document.getElementById('age').value || '25';
+      const idnum = document.getElementById('idnumber').value.trim() || 'A123456789';
+
+      ctx.fillText('Name:', 140, 70);
+      ctx.font = '20px Arial';
+      wrapText(ctx, fullname, 140, 95, canvas.width - 160, 24);
+
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('Age:', 140, 140);
+      ctx.font = '20px Arial';
+      ctx.fillText(age, 190, 140);
+
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText('ID Number:', 140, 180);
+      ctx.font = '20px Arial';
+      ctx.fillText(idnum, 250, 180);
+
+      // Draw footer text
+      ctx.font = 'italic 14px Arial';
+      ctx.fillText('For entertainment purposes only.', 10, canvas.height - 5);
+    };
   };
 
-  // Ball settings
-  const ball = {
-    x: fieldWidth / 2,
-    y: fieldHeight / 2,
-    radius: 10,
-    color: '#fff',
-    dx: 0,
-    dy: 0,
-    maxSpeed: 5,
+  // Generate initial card on page load
+  window.onload = () => {
+    generateBtn.click();
   };
-
-  // Score
-  let score = 0;
-
-  // Keyboard controls
-  const keys = {
-    ArrowUp: false,
-    ArrowDown: false,
-    ArrowLeft: false,
-    ArrowRight: false,
-  };
-
-  // Listen for key presses
-  window.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.key)) {
-      keys[e.key] = true;
-    }
-  });
-  window.addEventListener('keyup', (e) => {
-    if (keys.hasOwnProperty(e.key)) {
-      keys[e.key] = false;
-    }
-  });
-
-  function resetBall() {
-    ball.x = fieldWidth / 2;
-    ball.y = fieldHeight / 2;
-    ball.dx = 0;
-    ball.dy = 0;
-  }
-
-  function drawField() {
-    // Grass background
-    ctx.fillStyle = '#4caf50';
-    ctx.fillRect(0, 0, fieldWidth, fieldHeight);
-
-    // Center line
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(fieldWidth / 2, 0);
-    ctx.lineTo(fieldWidth / 2, fieldHeight);
-    ctx.stroke();
-
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(fieldWidth / 2, fieldHeight / 2, 60, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Goals - left and right
-    ctx.fillStyle = '#ddd';
-    // Left goal
-    ctx.fillRect(0, (fieldHeight - goalHeight) / 2, 10, goalHeight);
-    // Right goal
-    ctx.fillRect(fieldWidth - 10, (fieldHeight - goalHeight) / 2, 10, goalHeight);
-  }
-
-  function drawPlayer() {
-    ctx.fillStyle = player.color;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawBall() {
-    ctx.fillStyle = ball.color;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawScore() {
-    ctx.fillStyle = '#fff';
-    ctx.font = '24px Arial';
-    ctx.fillText(`Score: ${score}`, 20, 30);
-  }
-
-  function movePlayer() {
-    if (keys.ArrowUp && player.y - player.radius > 0) {
-      player.y -= player.speed;
-    }
-    if (keys.ArrowDown && player.y + player.radius < fieldHeight) {
-      player.y += player.speed;
-    }
-    if (keys.ArrowLeft && player.x - player.radius > 0) {
-      player.x -= player.speed;
-    }
-    if (keys.ArrowRight && player.x + player.radius < fieldWidth) {
-      player.x += player.speed;
-    }
-  }
-
-  function moveBall() {
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-
-    // Friction slows ball gradually
-    ball.dx *= 0.95;
-    ball.dy *= 0.95;
-
-    // Stop ball if very slow
-    if (Math.abs(ball.dx) < 0.1) ball.dx = 0;
-    if (Math.abs(ball.dy) < 0.1) ball.dy = 0;
-
-    // Keep ball inside field vertically
-    if (ball.y - ball.radius < 0) {
-      ball.y = ball.radius;
-      ball.dy = -ball.dy;
-    }
-    if (ball.y + ball.radius > fieldHeight) {
-      ball.y = fieldHeight - ball.radius;
-      ball.dy = -ball.dy;
-    }
-  }
-
-  function checkCollision() {
-    // Calculate distance between player and ball
-    const distX = ball.x - player.x;
-    const distY = ball.y - player.y;
-    const distance = Math.sqrt(distX * distX + distY * distY);
-
-    if (distance < player.radius + ball.radius) {
-      // Simple collision response: push ball away from player
-      const angle = Math.atan2(distY, distX);
-      const force = 5;
-      ball.dx = Math.cos(angle) * force;
-      ball.dy = Math.sin(angle) * force;
-    }
-  }
-
-  function checkGoal() {
-    // Left goal (player tries to score here)
-    if (
-      ball.x - ball.radius < 10 &&
-      ball.y > (fieldHeight - goalHeight) / 2 &&
-      ball.y < (fieldHeight + goalHeight) / 2
-    ) {
-      score++;
-      resetBall();
-    }
-
-    // Right goal (ball bounces off)
-    if (
-      ball.x + ball.radius > fieldWidth - 10 &&
-      ball.y > (fieldHeight - goalHeight) / 2 &&
-      ball.y < (fieldHeight + goalHeight) / 2
-    ) {
-      // Bounce ball back
-      ball.x = fieldWidth - 10 - ball.radius;
-      ball.dx = -ball.dx;
-    }
-  }
-
-  function gameLoop() {
-    ctx.clearRect(0, 0, fieldWidth, fieldHeight);
-
-    drawField();
-    drawScore();
-    movePlayer();
-    moveBall();
-    checkCollision();
-    checkGoal();
-    drawPlayer();
-    drawBall();
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  gameLoop();
 </script>
+
 </body>
 </html>
 
